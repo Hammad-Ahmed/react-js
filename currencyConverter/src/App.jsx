@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { CurrencyInputBox } from "./components";
 import useCurrencyInfo from "./hooks/useCurrencyInfo";
 import { useEffect } from "react";
@@ -15,27 +15,33 @@ function App() {
 	let currencyInfo = useCurrencyInfo(currencyFrom);
 
 	// Function to convert amount from one currency to another
-	const convert = () => {
-		console.log(amountFrom, currencyFrom, currencyTo, currencyInfo);
-		if (currencyInfo && currencyInfo[currencyTo]) {
-			return amountFrom * currencyInfo[currencyTo];
-		}
-		return 0;
-	}
+  const convert = useCallback((amount, targetCurrency, rates) => {
+    if (!rates || typeof rates[targetCurrency] === "undefined") return 0;
+    return amount * rates[targetCurrency];
+  }, []);
 
 	const swap = () => {
-		// const tempCurrency = currencyFrom;
-		// const tempAmount = amountFrom;
-		setCurrencyFrom(currencyTo);
-		// setAmountFrom(amountTo);
-		setCurrencyTo(currencyFrom);
-		// setAmountTo(tempAmount);
+		const prevAmountFrom = amountFrom;
+    const prevAmountTo = amountTo;
+    const prevCurrencyFrom = currencyFrom;
+    const prevCurrencyTo = currencyTo;
+
+    // optimistic immediate swap so UI responds instantly
+    setCurrencyFrom(prevCurrencyTo);
+    setCurrencyTo(prevCurrencyFrom);
+    setAmountFrom(prevAmountTo);
+    setAmountTo(prevAmountFrom);
 	}
 
-	useEffect( () => {
-		const result = convert(amountFrom, currencyTo);
-		setAmountTo(result);
-	}, [amountFrom, currencyFrom, currencyTo]);
+	// Recalculate only when we have the rate for the target currency
+  useEffect(() => {
+    if (!currencyInfo || typeof currencyInfo[currencyTo] === "undefined") {
+      // don't overwrite amountTo if we don't have a rate yet
+      return;
+    }
+    const result = convert(amountFrom, currencyTo, currencyInfo);
+    setAmountTo(result);
+  }, [amountFrom, currencyTo, currencyInfo, convert]);
 
 	return (
     <div
