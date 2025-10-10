@@ -1,5 +1,5 @@
 import express from "express";
-import { applyLeave, getPending, approveLeave } from "../services/leaveService.js";
+import { applyLeave, getPending, approveLeave, getMonthlySummary } from "../services/leaveService.js";
 import { users } from "../data/mockData.js";
 
 const router = express.Router();
